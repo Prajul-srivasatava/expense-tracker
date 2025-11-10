@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Ultimate Expense Tracker | PRAJUL SRIVASTAVA</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  :root {
+    --bg-color: #f0f4f8;
+    --card-bg: #ffffff;
+    --text-color: #333;
+    --primary: #1976d2;
+    --success: #4caf50;
+    --warning: #ff9800;
+    --danger: #e91e63;
+    --border: #dadada;
+  }
+  .dark-mode {
+    --bg-color: #1a1a1a;
+    --card-bg: #2d2d2d;
+    --text-color: #e0e0e0;
+    --border: #444;
+  }
+  * {box-sizing: border-box;}
+  body {font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg-color); color: var(--text-color); padding: 20px; margin: 0; transition: all 0.3s;}
+  .container {max-width: 1100px; margin: auto; background: var(--card-bg); padding: 25px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);}
+  h1, h2, h3 {color: var(--primary); margin-bottom: 15px;}
+  .header {display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;}
+  .dark-toggle {background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;}
+  .income-section, .loans-section {background: var(--card-bg); border: 2px solid var(--border); padding: 20px; border-radius: 10px; margin-bottom: 25px;}
+  .balance-display {display: flex; justify-content: space-around; flex-wrap: wrap; gap: 15px; margin-top: 15px;}
+  .balance-box {background: var(--bg-color); padding: 18px; border-radius: 10px; text-align: center; min-width: 150px; border: 1px solid var(--border);}
+  .balance-box h4 {margin: 0 0 8px 0; font-size: 0.9em; color: #666;}
+  .balance-box p {margin: 0; font-size: 1.6em; font-weight: bold;}
+  .income-box p {color: var(--success);}
+  .spent-box p {color: var(--danger);}
+  .remaining-box p {color: var(--primary);}
+  .lent-box p {color: var(--warning);}
+  .borrowed-box p {color: var(--danger);}
+  form {display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px;}
+  input, select, button {padding: 10px; font-size: 1em; border-radius: 6px; border: 1px solid var(--border); background: var(--card-bg); color: var(--text-color);}
+  button {background: var(--primary); color: white; border: none; cursor: pointer; transition: 0.2s;}
+  button:hover {opacity: 0.85;}
+  .btn-success {background: var(--success);}
+  .btn-warning {background: var(--warning);}
+  .btn-danger {background: var(--danger);}
+  table {width: 100%; border-collapse: collapse; margin: 20px 0;}
+  th, td {padding: 12px 8px; border: 1px solid var(--border); text-align: left;}
+  th {background: var(--primary); color: white;}
+  tr:nth-child(even) {background: var(--bg-color);}
+  .action-btn {padding: 5px 10px; font-size: 0.85em; margin: 2px;}
+  .charts {display: flex; flex-wrap: wrap; gap: 30px; justify-content: center; margin: 30px 0;}
+  .chart-container {width: 100%; max-width: 500px; background: var(--card-bg); padding: 20px; border-radius: 10px; border: 1px solid var(--border);}
+  .budget-alert {padding: 12px; border-radius: 6px; margin: 10px 0; font-weight: bold;}
+  .alert-success {background: #d4edda; color: #155724;}
+  .alert-warning {background: #fff3cd; color: #856404;}
+  .alert-danger {background: #f8d7da; color: #721c24;}
+  .modal {display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; z-index: 1000;}
+  .modal-content {background: var(--card-bg); padding: 30px; border-radius: 12px; max-width: 500px; width: 90%;}
+  .close-modal {float: right; font-size: 24px; cursor: pointer; color: var(--text-color);}
+  .savings-goal {background: var(--bg-color); padding: 20px; border-radius: 10px; margin: 20px 0; border: 1px solid var(--border);}
+  .progress-bar {background: #e0e0e0; border-radius: 10px; height: 25px; overflow: hidden; margin-top: 10px;}
+  .progress-fill {background: var(--success); height: 100%; transition: width 0.3s;}
+  .search-box {width: 100%; padding: 12px; margin: 15px 0; border: 2px solid var(--primary); border-radius: 6px; font-size: 1em;}
+  .status-pending {color: var(--warning); font-weight: bold;}
+  .status-settled {color: var(--success); font-weight: bold;}
+  @media (max-width: 768px) {
+    form {flex-direction: column;}
+    .balance-display {flex-direction: column;}
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div>
+      <h1>💰 Ultimate Expense Tracker</h1>
+      <p>By PRAJUL SRIVASTAVA | Register No: 23BCE0479</p>
+    </div>
+    <button class="dark-toggle" onclick="toggleDarkMode()">🌙 Dark Mode</button>
+  </div>
+
+  <!-- Income & Balance Section -->
+  <div class="income-section">
+    <h3>💵 Income & Balance</h3>
+    <form id="incomeForm">
+      <input type="number" id="incomeInput" placeholder="Set monthly income" step="0.01" required />
+      <button type="submit">Set Income</button>
+    </form>
+    <div class="balance-display">
+      <div class="balance-box income-box">
+        <h4>Total Income</h4>
+        <p id="totalIncome">₹0.00</p>
+      </div>
+      <div class="balance-box spent-box">
+        <h4>Total Spent</h4>
+        <p id="totalSpent">₹0.00</p>
+      </div>
+      <div class="balance-box remaining-box">
+        <h4>Balance Left</h4>
+        <p id="balanceLeft">₹0.00</p>
+      </div>
+    </div>
+    <div id="budgetAlert"></div>
+  </div>
+
+  <!-- Loans & Debts Section -->
+  <div class="loans-section">
+    <h3>💸 Loans & Debts Tracker</h3>
+    <form id="loanForm">
+      <select id="loanType" required>
+        <option value="">Type</option>
+        <option value="lent">I Lent (They owe me)</option>
+        <option value="borrowed">I Borrowed (I owe them)</option>
+      </select>
+      <input type="text" id="personName" placeholder="Person Name" required />
+      <input type="number" id="loanAmount" placeholder="Amount" step="0.01" required />
+      <input type="date" id="loanDate" required />
+      <input type="text" id="loanCategory" placeholder="Category (e.g., Personal, Business)" />
+      <button type="submit" class="btn-warning">Add Loan/Debt</button>
+    </form>
+    <div class="balance-display">
+      <div class="balance-box lent-box">
+        <h4>Total Lent (Others owe you)</h4>
+        <p id="totalLent">₹0.00</p>
+      </div>
+      <div class="balance-box borrowed-box">
+        <h4>Total Borrowed (You owe others)</h4>
+        <p id="totalBorrowed">₹0.00</p>
+      </div>
+    </div>
+    <h4>📋 Loans & Debts List</h4>
+    <table id="loansTable">
+      <thead>
+        <tr><th>ID</th><th>Type</th><th>Person</th><th>Amount</th><th>Date</th><th>Category</th><th>Status</th><th>Actions</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <!-- Savings Goal -->
+  <div class="savings-goal">
+    <h3>🎯 Savings Goal</h3>
+    <form id="savingsForm">
+      <input type="number" id="savingsGoal" placeholder="Set savings goal" step="0.01" required />
+      <button type="submit" class="btn-success">Set Goal</button>
+    </form>
+    <div id="savingsProgress"></div>
+  </div>
+
+  <!-- Add Expense Form -->
+  <h3>➕ Add Expense</h3>
+  <form id="expenseForm">
+    <select id="category" required>
+      <option value="">Category</option>
+      <option>🍔 Food</option>
+      <option>🚗 Transport</option>
+      <option>💡 Bills</option>
+      <option>🎬 Entertainment</option>
+      <option>🏥 Health</option>
+      <option>📚 Education</option>
+      <option>🛍️ Shopping</option>
+      <option>✈️ Travel</option>
+      <option>📱 Others</option>
+    </select>
+    <input type="number" id="amount" placeholder="Amount" step="0.01" required />
+    <input type="date" id="date" required />
+    <input type="text" id="description" placeholder="Description" />
+    <button type="submit">Add Expense</button>
+  </form>
+
+  <!-- Budget Limits -->
+  <h3>📊 Set Category Budgets</h3>
+  <form id="budgetForm">
+    <select id="budgetCategory" required>
+      <option value="">Select Category</option>
+      <option>🍔 Food</option>
+      <option>🚗 Transport</option>
+      <option>💡 Bills</option>
+      <option>🎬 Entertainment</option>
+      <option>🏥 Health</option>
+      <option>📚 Education</option>
+      <option>🛍️ Shopping</option>
+      <option>✈️ Travel</option>
+    </select>
+    <input type="number" id="budgetLimit" placeholder="Budget limit" step="0.01" required />
+    <button type="submit" class="btn-warning">Set Budget</button>
+  </form>
+
+  <!-- Search & Filter -->
+  <h3>🔍 Search & Filter</h3>
+  <input type="text" id="searchBox" class="search-box" placeholder="Search by description or category..." />
+  <form id="filterForm">
+    <select id="filterCategory">
+      <option value="">All Categories</option>
+      <option>🍔 Food</option>
+      <option>🚗 Transport</option>
+      <option>💡 Bills</option>
+      <option>🎬 Entertainment</option>
+      <option>🏥 Health</option>
+      <option>📚 Education</option>
+      <option>🛍️ Shopping</option>
+      <option>✈️ Travel</option>
+      <option>📱 Others</option>
+    </select>
+    <input type="date" id="filterFrom" placeholder="From" />
+    <input type="date" id="filterTo" placeholder="To" />
+    <input type="number" id="limitInput" placeholder="Limit" min="1" />
+    <button type="button" onclick="applyFilters()">Apply</button>
+    <button type="button" onclick="clearFilters()" class="btn-warning">Clear</button>
+    <button type="button" onclick="exportCSV()" class="btn-success">📥 Export CSV</button>
+  </form>
+
+  <!-- Expenses Table -->
+  <h3>📋 All Expenses</h3>
+  <table id="expensesTable">
+    <thead>
+      <tr><th>ID</th><th>Category</th><th>Amount</th><th>Date</th><th>Description</th><th>Actions</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <!-- Charts -->
+  <div class="charts">
+    <div class="chart-container">
+      <h3>Category Distribution</h3>
+      <canvas id="categoryChart"></canvas>
+    </div>
+    <div class="chart-container">
+      <h3>Monthly Trends</h3>
+      <canvas id="monthChart"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Modal -->
+<div id="editModal" class="modal">
+  <div class="modal-content">
+    <span class="close-modal" onclick="closeEditModal()">&times;</span>
+    <h3>Edit Expense</h3>
+    <form id="editForm">
+      <input type="hidden" id="editId" />
+      <select id="editCategory" required>
+        <option>🍔 Food</option>
+        <option>🚗 Transport</option>
+        <option>💡 Bills</option>
+        <option>🎬 Entertainment</option>
+        <option>🏥 Health</option>
+        <option>📚 Education</option>
+        <option>🛍️ Shopping</option>
+        <option>✈️ Travel</option>
+        <option>📱 Others</option>
+      </select><br/>
+      <input type="number" id="editAmount" step="0.01" required /><br/>
+      <input type="date" id="editDate" required /><br/>
+      <input type="text" id="editDescription" /><br/><br/>
+      <button type="submit">Save Changes</button>
+    </form>
+  </div>
+</div>
+
+<script>
+let expenses = JSON.parse(localStorage.getItem('expenses')) || [];
+let loans = JSON.parse(localStorage.getItem('loans')) || [];
+let income = parseFloat(localStorage.getItem('income')) || 0;
+let budgets = JSON.parse(localStorage.getItem('budgets')) || {};
+let savingsGoal = parseFloat(localStorage.getItem('savingsGoal')) || 0;
+let idCounter = expenses.length > 0 ? Math.max(...expenses.map(e => e.id)) + 1 : 1;
+let loanIdCounter = loans.length > 0 ? Math.max(...loans.map(l => l.id)) + 1 : 1;
+
+let categoryChart, monthChart;
+
+function saveToLocalStorage() {
+  localStorage.setItem('expenses', JSON.stringify(expenses));
+  localStorage.setItem('loans', JSON.stringify(loans));
+  localStorage.setItem('income', income);
+  localStorage.setItem('budgets', JSON.stringify(budgets));
+  localStorage.setItem('savingsGoal', savingsGoal);
+}
+
+function toggleDarkMode() {
+  document.body.classList.toggle('dark-mode');
+  localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
+}
+
+if (localStorage.getItem('darkMode') === 'true') {
+  document.body.classList.add('dark-mode');
+}
+
+function updateBalanceDisplay() {
+  const totalSpent = expenses.reduce((sum, exp) => sum + exp.amount, 0);
+  const balance = income - totalSpent;
+  document.getElementById('totalIncome').innerText = `₹${income.toFixed(2)}`;
+  document.getElementById('totalSpent').innerText = `₹${totalSpent.toFixed(2)}`;
+  document.getElementById('balanceLeft').innerText = `₹${balance.toFixed(2)}`;
+  
+  const percent = income > 0 ? (totalSpent / income) * 100 : 0;
+  const alertDiv = document.getElementById('budgetAlert');
+  if (percent >= 100) {
+    alertDiv.innerHTML = '<div class="budget-alert alert-danger">⚠️ You have exceeded your income!</div>';
+  } else if (percent >= 80) {
+    alertDiv.innerHTML = '<div class="budget-alert alert-warning">⚠️ You\'ve used 80% of your income!</div>';
+  } else {
+    alertDiv.innerHTML = '<div class="budget-alert alert-success">✅ You\'re within budget!</div>';
+  }
+  
+  updateSavingsProgress();
+  updateLoansDisplay();
+}
+
+function updateLoansDisplay() {
+  const totalLent = loans.filter(l => l.type === 'lent' && l.status === 'pending').reduce((sum, l) => sum + l.amount, 0);
+  const totalBorrowed = loans.filter(l => l.type === 'borrowed' && l.status === 'pending').reduce((sum, l) => sum + l.amount, 0);
+  
+  document.getElementById('totalLent').innerText = `₹${totalLent.toFixed(2)}`;
+  document.getElementById('totalBorrowed').innerText = `₹${totalBorrowed.toFixed(2)}`;
+  
+  renderLoans();
+}
+
+function renderLoans() {
+  const tbody = document.querySelector("#loansTable tbody");
+  tbody.innerHTML = loans.length ? '' : '<tr><td colspan="8" style="text-align:center;">No loans/debts recorded</td></tr>';
+  loans.forEach(loan => {
+    const typeLabel = loan.type === 'lent' ? '💰 Lent' : '📤 Borrowed';
+    const statusClass = loan.status === 'pending' ? 'status-pending' : 'status-settled';
+    tbody.innerHTML += `
+      <tr>
+        <td>${loan.id}</td>
+        <td>${typeLabel}</td>
+        <td>${loan.person}</td>
+        <td>₹${loan.amount.toFixed(2)}</td>
+        <td>${loan.date}</td>
+        <td>${loan.category || '-'}</td>
+        <td class="${statusClass}">${loan.status.toUpperCase()}</td>
+        <td>
+          ${loan.status === 'pending' ? `<button class="action-btn btn-success" onclick="settleLoan(${loan.id})">Settle</button>` : ''}
+          <button class="action-btn btn-danger" onclick="deleteLoan(${loan.id})">Delete</button>
+        </td>
+      </tr>
+    `;
+  });
+}
+
+document.getElementById('loanForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const loan = {
+    id: loanIdCounter++,
+    type: e.target.loanType.value,
+    person: e.target.personName.value,
+    amount: parseFloat(e.target.loanAmount.value),
+    date: e.target.loanDate.value,
+    category: e.target.loanCategory.value,
+    status: 'pending'
+  };
+  loans.push(loan);
+  saveToLocalStorage();
+  e.target.reset();
+  updateLoansDisplay();
+});
+
+function settleLoan(id) {
+  const loan = loans.find(l => l.id === id);
+  if (loan) {
+    loan.status = 'settled';
+    saveToLocalStorage();
+    updateLoansDisplay();
+  }
+}
+
+function deleteLoan(id) {
+  if (!confirm('Delete this loan/debt?')) return;
+  loans = loans.filter(l => l.id !== id);
+  saveToLocalStorage();
+  updateLoansDisplay();
+}
+
+function updateSavingsProgress() {
+  const balance = income - expenses.reduce((sum, exp) => sum + exp.amount, 0);
+  const progress = savingsGoal > 0 ? Math.min((balance / savingsGoal) * 100, 100) : 0;
+  document.getElementById('savingsProgress').innerHTML = `
+    <p>Goal: ₹${savingsGoal.toFixed(2)} | Current: ₹${balance.toFixed(2)}</p>
+    <div class="progress-bar"><div class="progress-fill" style="width: ${progress}%"></div></div>
+    <p>${progress.toFixed(1)}% achieved</p>
+  `;
+}
+
+document.getElementById('incomeForm').addEventListener('submit', e => {
+  e.preventDefault();
+  income = parseFloat(document.getElementById('incomeInput').value);
+  saveToLocalStorage();
+  updateBalanceDisplay();
+  e.target.reset();
+});
+
+document.getElementById('savingsForm').addEventListener('submit', e => {
+  e.preventDefault();
+  savingsGoal = parseFloat(document.getElementById('savingsGoal').value);
+  saveToLocalStorage();
+  updateSavingsProgress();
+  e.target.reset();
+});
+
+document.getElementById('budgetForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const cat = document.getElementById('budgetCategory').value;
+  const limit = parseFloat(document.getElementById('budgetLimit').value);
+  budgets[cat] = limit;
+  saveToLocalStorage();
+  alert(`Budget set for ${cat}: ₹${limit}`);
+  e.target.reset();
+});
+
+document.getElementById('expenseForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const exp = {
+    id: idCounter++,
+    category: e.target.category.value,
+    amount: parseFloat(e.target.amount.value),
+    date: e.target.date.value,
+    description: e.target.description.value
+  };
+  expenses.push(exp);
+  saveToLocalStorage();
+  e.target.reset();
+  updateBalanceDisplay();
+  applyFilters();
+});
+
+function renderExpenses(data) {
+  const tbody = document.querySelector("#expensesTable tbody");
+  tbody.innerHTML = data.length ? '' : '<tr><td colspan="6" style="text-align:center;">No expenses</td></tr>';
+  data.forEach(exp => {
+    tbody.innerHTML += `
+      <tr>
+        <td>${exp.id}</td>
+        <td>${exp.category}</td>
+        <td>₹${exp.amount.toFixed(2)}</td>
+        <td>${exp.date}</td>
+        <td>${exp.description || '-'}</td>
+        <td>
+          <button class="action-btn btn-warning" onclick="editExpense(${exp.id})">Edit</button>
+          <button class="action-btn btn-danger" onclick="deleteExpense(${exp.id})">Delete</button>
+        </td>
+      </tr>
+    `;
+  });
+}
+
+function renderCharts(data) {
+  const catSummary = {};
+  data.forEach(exp => catSummary[exp.category] = (catSummary[exp.category] || 0) + exp.amount);
+  
+  if (categoryChart) categoryChart.destroy();
+  categoryChart = new Chart(document.getElementById('categoryChart'), {
+    type: 'doughnut',
+    data: {
+      labels: Object.keys(catSummary),
+      datasets: [{data: Object.values(catSummary), backgroundColor: ['#1976d2','#e91e63','#ff9800','#4caf50','#9c27b0','#00bcd4','#ffeb3b','#795548']}]
+    },
+    options: {responsive: true, plugins: {legend: {position: 'bottom'}}}
+  });
+  
+  const monthly = {};
+  data.forEach(exp => {
+    const month = exp.date.substr(0, 7);
+    monthly[month] = (monthly[month] || 0) + exp.amount;
+  });
+  
+  if (monthChart) monthChart.destroy();
+  monthChart = new Chart(document.getElementById('monthChart'), {
+    type: 'line',
+    data: {
+      labels: Object.keys(monthly).sort(),
+      datasets: [{label: 'Monthly Expenses', data: Object.keys(monthly).sort().map(m => monthly[m]), borderColor: '#1976d2', fill: false}]
+    },
+    options: {responsive: true, scales: {y: {beginAtZero: true}}}
+  });
+}
+
+function applyFilters() {
+  let filtered = [...expenses];
+  const cat = document.getElementById('filterCategory').value;
+  const from = document.getElementById('filterFrom').value;
+  const to = document.getElementById('filterTo').value;
+  const limit = parseInt(document.getElementById('limitInput').value);
+  const search = document.getElementById('searchBox').value.toLowerCase();
+  
+  if (cat) filtered = filtered.filter(e => e.category === cat);
+  if (from) filtered = filtered.filter(e => e.date >= from);
+  if (to) filtered = filtered.filter(e => e.date <= to);
+  if (search) filtered = filtered.filter(e => e.description.toLowerCase().includes(search) || e.category.toLowerCase().includes(search));
+  if (!isNaN(limit) && limit > 0) filtered = filtered.slice(0, limit);
+  
+  renderExpenses(filtered);
+  renderCharts(filtered);
+}
+
+function clearFilters() {
+  document.getElementById('filterForm').reset();
+  document.getElementById('searchBox').value = '';
+  applyFilters();
+}
+
+document.getElementById('searchBox').addEventListener('input', applyFilters);
+
+function editExpense(id) {
+  const exp = expenses.find(e => e.id === id);
+  document.getElementById('editId').value = exp.id;
+  document.getElementById('editCategory').value = exp.category;
+  document.getElementById('editAmount').value = exp.amount;
+  document.getElementById('editDate').value = exp.date;
+  document.getElementById('editDescription').value = exp.description;
+  document.getElementById('editModal').style.display = 'flex';
+}
+
+function closeEditModal() {
+  document.getElementById('editModal').style.display = 'none';
+}
+
+document.getElementById('editForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const id = parseInt(document.getElementById('editId').value);
+  const index = expenses.findIndex(e => e.id === id);
+  expenses[index] = {
+    id,
+    category: document.getElementById('editCategory').value,
+    amount: parseFloat(document.getElementById('editAmount').value),
+    date: document.getElementById('editDate').value,
+    description: document.getElementById('editDescription').value
+  };
+  saveToLocalStorage();
+  updateBalanceDisplay();
+  applyFilters();
+  closeEditModal();
+});
+
+function deleteExpense(id) {
+  if (!confirm('Delete this expense?')) return;
+  expenses = expenses.filter(e => e.id !== id);
+  saveToLocalStorage();
+  updateBalanceDisplay();
+  applyFilters();
+}
+
+function exportCSV() {
+  let csv = 'ID,Category,Amount,Date,Description\n';
+  expenses.forEach(e => csv += `${e.id},${e.category},${e.amount},${e.date},"${e.description}"\n`);
+  const blob = new Blob([csv], {type: 'text/csv'});
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'expenses.csv';
+  link.click();
+}
+
+updateBalanceDisplay();
+applyFilters();
+</script>
+</body>
+</html>
